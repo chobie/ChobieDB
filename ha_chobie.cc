@@ -367,7 +367,6 @@ int ha_chobie::close(void)
 int ha_chobie::write_row(uchar *buf)
 {
   long long position;
-  Field **field;
   int score;
 
   DBUG_ENTER("ha_chobie::write_row");
@@ -404,6 +403,27 @@ int ha_chobie::get_score()
   }
   
   dbug_tmp_restore_column_map(table->read_set, old_map);
+  DBUG_RETURN(score);
+}
+
+int ha_chobie::set_rank(SkipListNode *node)
+{
+  int score = 0;
+  int i =0;
+  my_bitmap_map *old_map= dbug_tmp_use_all_columns(table, table->write_set);
+
+  DBUG_ENTER("ha_chobie::get_score");
+  for (Field **field = table->field; *field; field++, i++)
+  {
+    if (strcmp((*field)->field_name, "rank") == 0)
+    {
+      fprintf(stderr, "rank!\n");
+      (*field)->store(share->data_class->current_rank(), true);
+      break;
+    }
+  }
+  
+  dbug_tmp_restore_column_map(table->write_set, old_map);
   DBUG_RETURN(score);
 }
 
@@ -580,6 +600,7 @@ int ha_chobie::rnd_init(bool scan)
   /* nothing to do */
   current_position = 0;
   stats.records = 0;
+  share->data_class->clear_rank();
   DBUG_RETURN(0);
 }
 
@@ -607,14 +628,17 @@ int ha_chobie::rnd_end()
 int ha_chobie::rnd_next(uchar *buf)
 {
   int rc;
+  SkipListNode *node = NULL;
   DBUG_ENTER("ha_chobie::rnd_next");
   MYSQL_READ_ROW_START(table_share->db.str, table_share->table_name.str,
                        TRUE);
 
   /* read the row from memory */
-  rc= share->data_class->read_row(buf, table->s->rec_buff_length, current_position);
+  rc= share->data_class->read_row(buf, table->s->rec_buff_length, current_position, node);
   if (rc != -1) {
     current_position = (long long)(share->data_class->current_position());
+    memset(buf, 0, table->s->null_bytes);
+    set_rank(node);
   } else {
     DBUG_RETURN(HA_ERR_END_OF_FILE);
   }
@@ -669,12 +693,14 @@ void ha_chobie::position(const uchar *record)
 int ha_chobie::rnd_pos(uchar *buf, uchar *pos)
 {
   int rc;
+  SkipListNode *node = NULL;
+
   DBUG_ENTER("ha_chobie::rnd_pos");
   MYSQL_READ_ROW_START(table_share->db.str, table_share->table_name.str,
                        TRUE);
   ha_statistic_increment(&SSV::ha_read_rnd_next_count);
   current_position = (long long)my_get_ptr(pos, ref_length);
-  rc = share->data_class->read_row(buf, current_position, -1);
+  rc = share->data_class->read_row(buf, current_position, -1, node);
   MYSQL_READ_ROW_DONE(rc);
   DBUG_RETURN(rc);
 }

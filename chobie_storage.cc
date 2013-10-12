@@ -28,6 +28,7 @@
 Chobie_data::Chobie_data(void)
 {
 	current_table = NULL;
+	rank = 0;
 }
 
 Chobie_data::~Chobie_data(void)
@@ -52,8 +53,10 @@ int Chobie_data::open_table(const char *path)
 		create_skiplist(&list);
 		Chobieton::container.insert(make_pair(path, list));
 		current_table = list;
+		rank = 0;
 	} else {
 		current_table = i->second;
+		rank = 0;
 	}
 
 	DBUG_RETURN(0);
@@ -73,7 +76,7 @@ int Chobie_data::rename_table(const char *from, const char *to)
 	DBUG_RETURN(0);
 }
 
-int Chobie_data::read_row(uchar *buf, int length, long long position)
+int Chobie_data::read_row(uchar *buf, int length, long long position, SkipListNode *output)
 {
 	SkipListNode *node;
 	DBUG_ENTER("Chobie_data::read_row");
@@ -90,6 +93,8 @@ int Chobie_data::read_row(uchar *buf, int length, long long position)
 	} else {
 		assert(node);
 		memcpy(buf, node->data, node->length);
+		output = node;
+		rank++; // for now.
 
 		if (node->level[0].forward != NULL) {
 			node = node->level[0].forward;
@@ -100,6 +105,16 @@ int Chobie_data::read_row(uchar *buf, int length, long long position)
 	}
 
 	DBUG_RETURN(0);
+}
+
+void Chobie_data::clear_rank()
+{
+	rank = 0;
+}
+
+long long Chobie_data::current_rank()
+{
+	return rank;
 }
 
 long long Chobie_data::current_position()

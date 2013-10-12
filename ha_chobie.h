@@ -72,7 +72,8 @@ public:
   }
 
   int get_score();
-  
+  int set_rank(SkipListNode *node);
+
   /** @brief
     The name that will be used for display purposes.
    */
