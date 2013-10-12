@@ -34,7 +34,7 @@
  *  All rights reserved.
  */
 
-int create_skiplist_node(unsigned int level, double score, SkipListNode **output)
+int create_skiplist_node(unsigned int level, double score, SkipListNode **output, void *data, size_t length)
 {
 	SkipListNode *node = NULL;
 	int i;
@@ -49,6 +49,8 @@ int create_skiplist_node(unsigned int level, double score, SkipListNode **output
 	}
 
 	node->score =  score;
+	node->data = data;
+	node->length = length;
 	*output = node;
 	return 0;
 }
@@ -64,7 +66,7 @@ int create_skiplist(SkipList **output)
 	list->level = 1;
 	list->length = 0;
 
-	create_skiplist_node(MAX_LEVEL, 0, &list->header);
+	create_skiplist_node(MAX_LEVEL, 0, &list->header, NULL, 0);
 	assert(list->header);
 
 	*output = list;
@@ -104,7 +106,7 @@ int skiplist_get_random_level()
 	return (level<MAX_LEVEL) ? level : MAX_LEVEL;
 }
 
-int insert_skiplist(SkipList *list, double score)
+int insert_skiplist(SkipList *list, double score, void *data, size_t length)
 {
 	SkipListNode *update[MAX_LEVEL] = {0}, *node, *add;
 	unsigned int rank[MAX_LEVEL] = {0};
@@ -134,7 +136,7 @@ int insert_skiplist(SkipList *list, double score)
 		list->level = level;
 	}
 
-	create_skiplist_node(level, score, &add);
+	create_skiplist_node(level, score, &add, data, length);
 	for (i = 0; i < level; i++) {
 		add->level[i].forward = update[i]->level[i].forward;
 		update[i]->level[i].forward = add;

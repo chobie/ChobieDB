@@ -63,6 +63,7 @@ class ha_chobie: public handler
   THR_LOCK_DATA lock;      ///< MySQL lock
   Chobie_share *share;    ///< Shared lock info
   Chobie_share *get_share(); ///< Get the share
+  long long current_position;
 
 public:
   ha_chobie(handlerton *hton, TABLE_SHARE *table_arg);
@@ -70,6 +71,8 @@ public:
   {
   }
 
+  int get_score();
+  
   /** @brief
     The name that will be used for display purposes.
    */

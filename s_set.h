@@ -36,6 +36,8 @@ struct SkipListLevel {
 
 typedef struct SkipListNode {
     double score;
+    void *data;
+    size_t length;
     struct SkipListLevel level[];
 } SkipListNode;
 
@@ -47,10 +49,10 @@ typedef struct SkipList {
 } SkipList;
 
 
-int create_skiplist_node(unsigned int level, double score, SkipListNode **output);
+int create_skiplist_node(unsigned int level, double score, SkipListNode **output, void *data, size_t length);
 int create_skiplist(SkipList **output);
 void  free_skiplist_node(SkipListNode *node);
 void  free_skiplist(SkipList *list);
-int insert_skiplist(SkipList *list, double score);
+int insert_skiplist(SkipList *list, double score, void *data, size_t length);
 int delete_skiplist_node(SkipList *list, double score);
 #endif

@@ -35,6 +35,7 @@ class Chobie_data
 {
 public:
 	SkipList *current_table;
+	SkipListNode *current_node;
 
 	Chobie_data(void);
 	~Chobie_data(void);
@@ -43,4 +44,7 @@ public:
 	int open_table(const char *path);
 	int delete_table(const char *path);
 	int rename_table(const char *from, const char *to);
+	int read_row(uchar *buf, int length, long long position);
+	long long current_position();
+	long long write_row(uchar *buf, int length, int score);
 };

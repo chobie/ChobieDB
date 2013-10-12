@@ -23,6 +23,7 @@
 
 #include "chobie_storage.h"
 #include <my_dir.h>
+#include <field.h>
 
 Chobie_data::Chobie_data(void)
 {
@@ -35,11 +36,13 @@ Chobie_data::~Chobie_data(void)
 
 int Chobie_data::create_table(const char *path)
 {
-	return 0;
+	DBUG_ENTER("Chobie_data::create_table");
+	DBUG_RETURN(0);
 }
 
 int Chobie_data::open_table(const char *path)
 {
+	DBUG_ENTER("Chobie_data::open_table");
 	string table_path = path;
 	SkipList *list;
 	unordered_map<string, SkipList*>::iterator i;  
@@ -53,17 +56,66 @@ int Chobie_data::open_table(const char *path)
 		current_table = i->second;
 	}
 
-	return 0;
+	DBUG_RETURN(0);
 }
 
 int Chobie_data::delete_table(const char *path)
 {
+	DBUG_ENTER("Chobie_data::delete_table");
 	Chobieton::erase(path);
-	return 0;
+	DBUG_RETURN(0);
 }
 
 int Chobie_data::rename_table(const char *from, const char *to)
 {
+	DBUG_ENTER("Chobie_data::rename_table");
 	Chobieton::rename(from, to);
+	DBUG_RETURN(0);
+}
+
+int Chobie_data::read_row(uchar *buf, int length, long long position)
+{
+	SkipListNode *node;
+	DBUG_ENTER("Chobie_data::read_row");
+	if (position == -1) {
+		DBUG_RETURN(-1);
+	}
+	if (position <= 0) {
+		position =  (long long)current_table->header->level[0].forward;
+	}
+
+	node = (SkipListNode*)position;
+	if (node == NULL) {
+		DBUG_RETURN(HA_ERR_END_OF_FILE);
+	} else {
+		assert(node);
+		memcpy(buf, node->data, node->length);
+
+		if (node->level[0].forward != NULL) {
+			node = node->level[0].forward;
+			current_node = node;
+		} else {
+			current_node = NULL;
+		}
+	}
+
+	DBUG_RETURN(0);
+}
+
+long long Chobie_data::current_position()
+{
+	if (current_node != NULL) {
+		return (long long)current_node;
+	} else {
+		return -1;
+	}
+}
+
+long long Chobie_data::write_row(uchar *buf, int length, int score)
+{
+	uchar *copy = {0};
+	copy = (uchar*)my_malloc(length, MYF(MY_ZEROFILL | MY_WME));
+	memcpy(copy, buf, length);
+	insert_skiplist(current_table, score, (void*)copy, length);
 	return 0;
 }

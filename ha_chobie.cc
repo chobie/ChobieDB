@@ -366,14 +366,45 @@ int ha_chobie::close(void)
 
 int ha_chobie::write_row(uchar *buf)
 {
+  long long position;
+  Field **field;
+  int score;
+
   DBUG_ENTER("ha_chobie::write_row");
-  /*
-    Chobie of a successful write_row. We don't store the data
-    anywhere; they are thrown away. A real implementation will
-    probably need to do something with 'buf'. We report a success
-    here, to pretend that the insert was successful.
-  */
+  ha_statistic_increment(&SSV::ha_write_count);
+
+  mysql_mutex_lock(&share->mutex);
+
+  // for (field=table->field ; *field ; field++) {
+  //   fprintf(stderr, "field_name: %s\n", (*field)->field_name);
+  // }
+
+  score = get_score();
+  //fprintf(stderr, "score: %d\n", score);
+  position = share->data_class->write_row(buf, table->s->rec_buff_length, score);
+  mysql_mutex_unlock(&share->mutex);
   DBUG_RETURN(0);
+}
+
+
+int ha_chobie::get_score()
+{
+  int score = 0;
+  int i =0;
+  my_bitmap_map *old_map= dbug_tmp_use_all_columns(table, table->read_set);
+
+  DBUG_ENTER("ha_chobie::get_score");
+  for (Field **field = table->field; *field; field++, i++)
+  {
+    if (strcmp((*field)->field_name, "score") == 0)
+    {
+      score =  (*field)->val_int();
+      break;
+    }
+  }
+  
+  dbug_tmp_restore_column_map(table->read_set, old_map);
+  DBUG_RETURN(score);
 }
 
 
@@ -546,6 +577,9 @@ int ha_chobie::index_last(uchar *buf)
 int ha_chobie::rnd_init(bool scan)
 {
   DBUG_ENTER("ha_chobie::rnd_init");
+  /* nothing to do */
+  current_position = 0;
+  stats.records = 0;
   DBUG_RETURN(0);
 }
 
@@ -576,7 +610,15 @@ int ha_chobie::rnd_next(uchar *buf)
   DBUG_ENTER("ha_chobie::rnd_next");
   MYSQL_READ_ROW_START(table_share->db.str, table_share->table_name.str,
                        TRUE);
-  rc= HA_ERR_END_OF_FILE;
+
+  /* read the row from memory */
+  rc= share->data_class->read_row(buf, table->s->rec_buff_length, current_position);
+  if (rc != -1) {
+    current_position = (long long)(share->data_class->current_position());
+  } else {
+    DBUG_RETURN(HA_ERR_END_OF_FILE);
+  }
+  stats.records++;
   MYSQL_READ_ROW_DONE(rc);
   DBUG_RETURN(rc);
 }
@@ -606,6 +648,7 @@ int ha_chobie::rnd_next(uchar *buf)
 void ha_chobie::position(const uchar *record)
 {
   DBUG_ENTER("ha_chobie::position");
+  my_store_ptr(ref, ref_length, current_position);
   DBUG_VOID_RETURN;
 }
 
@@ -629,7 +672,9 @@ int ha_chobie::rnd_pos(uchar *buf, uchar *pos)
   DBUG_ENTER("ha_chobie::rnd_pos");
   MYSQL_READ_ROW_START(table_share->db.str, table_share->table_name.str,
                        TRUE);
-  rc= HA_ERR_WRONG_COMMAND;
+  ha_statistic_increment(&SSV::ha_read_rnd_next_count);
+  current_position = (long long)my_get_ptr(pos, ref_length);
+  rc = share->data_class->read_row(buf, current_position, -1);
   MYSQL_READ_ROW_DONE(rc);
   DBUG_RETURN(rc);
 }
@@ -676,6 +721,9 @@ int ha_chobie::rnd_pos(uchar *buf, uchar *pos)
 int ha_chobie::info(uint flag)
 {
   DBUG_ENTER("ha_chobie::info");
+  if (stats.records < 2)
+    stats.records = 2;
+
   DBUG_RETURN(0);
 }
 
