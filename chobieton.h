@@ -20,37 +20,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE. 
  */
-#ifndef T_CHOBIE_SET
-#define T_CHOBIE_SET
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <assert.h>
-#include <string.h>
-#include <unistd.h>
+#include "s_set.h"
+#include <tr1/unordered_map>
+#include <string>
 
-struct SkipListLevel {
-    struct SkipListNode *forward;
-    unsigned int span;
-}; 
+using namespace std;
+using namespace std::tr1;
 
-typedef struct SkipListNode {
-    double score;
-    struct SkipListLevel level[];
-} SkipListNode;
-
-typedef struct SkipList {
-    SkipListNode *header, *tail;
-    unsigned long length;
-    unsigned long max_level;
-    int level;
-} SkipList;
-
-
-int create_skiplist_node(unsigned int level, double score, SkipListNode **output);
-int create_skiplist(SkipList **output);
-void  free_skiplist_node(SkipListNode *node);
-void  free_skiplist(SkipList *list);
-int insert_skiplist(SkipList *list, double score);
-int delete_skiplist_node(SkipList *list, double score);
-#endif
+class Chobieton
+{
+public:
+	static unordered_map<string, SkipList*> container;
+	static int rename(const char *from, const char *to);
+	static int erase(const char *name);
+};

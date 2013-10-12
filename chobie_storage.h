@@ -20,37 +20,27 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE. 
  */
-#ifndef T_CHOBIE_SET
-#define T_CHOBIE_SET
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <assert.h>
-#include <string.h>
-#include <unistd.h>
 
-struct SkipListLevel {
-    struct SkipListNode *forward;
-    unsigned int span;
-}; 
+#include "my_global.h"
+#include "my_sys.h"
+#include "s_set.h"
+#include <tr1/unordered_map>
+#include <string>
+#include "chobieton.h"
 
-typedef struct SkipListNode {
-    double score;
-    struct SkipListLevel level[];
-} SkipListNode;
+using namespace std;
+using namespace std::tr1;
 
-typedef struct SkipList {
-    SkipListNode *header, *tail;
-    unsigned long length;
-    unsigned long max_level;
-    int level;
-} SkipList;
+class Chobie_data
+{
+public:
+	SkipList *current_table;
 
+	Chobie_data(void);
+	~Chobie_data(void);
 
-int create_skiplist_node(unsigned int level, double score, SkipListNode **output);
-int create_skiplist(SkipList **output);
-void  free_skiplist_node(SkipListNode *node);
-void  free_skiplist(SkipList *list);
-int insert_skiplist(SkipList *list, double score);
-int delete_skiplist_node(SkipList *list, double score);
-#endif
+	int create_table(const char *path);
+	int open_table(const char *path);
+	int delete_table(const char *path);
+	int rename_table(const char *from, const char *to);
+};

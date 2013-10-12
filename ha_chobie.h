@@ -35,6 +35,7 @@
 #include "thr_lock.h"                    /* THR_LOCK, THR_LOCK_DATA */
 #include "handler.h"                     /* handler */
 #include "my_base.h"                     /* ha_rows */
+#include "chobie_storage.h"
 
 /** @brief
   Chobie_share is a class that will be shared among all open handlers.
@@ -44,11 +45,13 @@ class Chobie_share : public Handler_share {
 public:
   mysql_mutex_t mutex;
   THR_LOCK lock;
+  Chobie_data *data_class;
   Chobie_share();
   ~Chobie_share()
   {
     thr_lock_delete(&lock);
     mysql_mutex_destroy(&mutex);
+    delete data_class;
   }
 };
 

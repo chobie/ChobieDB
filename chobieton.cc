@@ -20,37 +20,31 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE. 
  */
-#ifndef T_CHOBIE_SET
-#define T_CHOBIE_SET
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <assert.h>
-#include <string.h>
-#include <unistd.h>
 
-struct SkipListLevel {
-    struct SkipListNode *forward;
-    unsigned int span;
-}; 
+#include "chobieton.h"
 
-typedef struct SkipListNode {
-    double score;
-    struct SkipListLevel level[];
-} SkipListNode;
+unordered_map<string, SkipList*> Chobieton::container;
 
-typedef struct SkipList {
-    SkipListNode *header, *tail;
-    unsigned long length;
-    unsigned long max_level;
-    int level;
-} SkipList;
+int Chobieton::rename(const char *from, const char *to)
+{
+	string table_path = from;
+	string to_path = to;
+
+	unordered_map<string, SkipList*>::iterator i;  
+	i = container.find(table_path);
+
+	if (i != container.end()) {
+		container.insert(make_pair(to_path, i->second));
+		container.erase(table_path);
+	}
 
 
-int create_skiplist_node(unsigned int level, double score, SkipListNode **output);
-int create_skiplist(SkipList **output);
-void  free_skiplist_node(SkipListNode *node);
-void  free_skiplist(SkipList *list);
-int insert_skiplist(SkipList *list, double score);
-int delete_skiplist_node(SkipList *list, double score);
-#endif
+	return 0;
+}
+
+int Chobieton::erase(const char *name)
+{
+	string table_path = name;
+	container.erase(table_path);
+	return 0;
+}

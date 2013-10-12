@@ -55,7 +55,6 @@ int create_skiplist_node(unsigned int level, double score, SkipListNode **output
 
 int create_skiplist(SkipList **output)
 {
-	int i;
 	SkipList *list = NULL;
 
 	list = (SkipList*)malloc(sizeof(*list));
@@ -175,6 +174,7 @@ static int delete_node(SkipList *list, SkipListNode *node, double score, SkipLis
 		list->level--;
 	}
 	list->length--;
+	return 0;
 }
 
 int delete_skiplist_node(SkipList *list, double score)

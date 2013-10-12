@@ -1,4 +1,5 @@
 /* Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2013 Shuhei Tanuma
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -15,6 +16,8 @@
 
 /**
   @file ha_chobie.cc
+
+  this storage engine fork from MySQL's exmaple storage engine.
 
   @brief
   The ha_chobie engine is a stubbed storage engine for chobie purposes only;
@@ -127,6 +130,8 @@ Chobie_share::Chobie_share()
   thr_lock_init(&lock);
   mysql_mutex_init(ex_key_mutex_Chobie_share_mutex,
                    &mutex, MY_MUTEX_INIT_FAST);
+
+  data_class = new Chobie_data();
 }
 
 
@@ -299,6 +304,8 @@ int ha_chobie::open(const char *name, int mode, uint test_if_locked)
 
   if (!(share = get_share()))
     DBUG_RETURN(1);
+
+  share->data_class->open_table(name);
   thr_lock_data_init(&share->lock,&lock,NULL);
 
   DBUG_RETURN(0);
@@ -832,7 +839,8 @@ THR_LOCK_DATA **ha_chobie::store_lock(THD *thd,
 int ha_chobie::delete_table(const char *name)
 {
   DBUG_ENTER("ha_chobie::delete_table");
-  /* This is not implemented but we want someone to be able that it works. */
+  Chobieton::container.erase(name);
+ 
   DBUG_RETURN(0);
 }
 
@@ -854,7 +862,8 @@ int ha_chobie::delete_table(const char *name)
 int ha_chobie::rename_table(const char * from, const char * to)
 {
   DBUG_ENTER("ha_chobie::rename_table ");
-  DBUG_RETURN(HA_ERR_WRONG_COMMAND);
+  Chobieton::rename(from, to);
+  DBUG_RETURN(0);
 }
 
 
@@ -902,10 +911,7 @@ int ha_chobie::create(const char *name, TABLE *table_arg,
                        HA_CREATE_INFO *create_info)
 {
   DBUG_ENTER("ha_chobie::create");
-  /*
-    This is not implemented but we want someone to be able to see that it
-    works.
-  */
+  /* ChobieDB is in memory skip list database. so we don't do anything here. */
   DBUG_RETURN(0);
 }
 
