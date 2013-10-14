@@ -62,6 +62,22 @@ int Chobie_data::open_table(const char *path)
 	DBUG_RETURN(0);
 }
 
+int Chobie_data::delete_row(const uchar *buf, int score)
+{
+	return delete_skiplist_node(current_table, score);
+}
+
+long long Chobie_data::update_row(const uchar *old_rec, int old_score, uchar *new_rec, int score, int length, long long position)
+{
+	uchar *copy = {0};
+	copy = (uchar*)my_malloc(length, MYF(MY_ZEROFILL | MY_WME));
+	memcpy(copy, new_rec, length);
+
+	delete_skiplist_node(current_table, old_score);
+	insert_skiplist(current_table, score, (void*)copy, length);
+	return 0;
+}
+
 int Chobie_data::delete_table(const char *path)
 {
 	DBUG_ENTER("Chobie_data::delete_table");

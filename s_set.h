@@ -55,4 +55,5 @@ void  free_skiplist_node(SkipListNode *node);
 void  free_skiplist(SkipList *list);
 int insert_skiplist(SkipList *list, double score, void *data, size_t length);
 int delete_skiplist_node(SkipList *list, double score);
+int update_skiplist_node(SkipList *list, double score, void *data, size_t length);
 #endif

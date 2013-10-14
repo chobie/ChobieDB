@@ -50,4 +50,6 @@ public:
 	long long write_row(uchar *buf, int length, int score);
 	long long current_rank();
 	void clear_rank();
+	int delete_row(const uchar *buf, int score);
+	long long update_row(const uchar *old_rec, int old_score, uchar *new_rec, int score, int length, long long position);
 };

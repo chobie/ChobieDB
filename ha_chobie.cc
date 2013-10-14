@@ -406,6 +406,34 @@ int ha_chobie::get_score()
   DBUG_RETURN(score);
 }
 
+int ha_chobie::get_score_from_buf(const uchar *buf)
+{
+  int score = 0;
+  int num_fields;
+  int i = 0;
+  int offset, size;
+  Field *field;
+  int result = 0;
+
+  my_bitmap_map *old_map= dbug_tmp_use_all_columns(table, table->read_set);
+
+  num_fields = table->s->fields;
+  DBUG_ENTER("ha_chobie::get_score");
+  for (i = 0; i < num_fields; i++) {
+    field = table->field[i];
+    if (strcmp(field->field_name, "score") == 0) {
+      offset = field->ptr - table->record[0];
+      size = field->pack_length();
+      memcpy(&result, &buf[offset], sizeof(int));
+      break;
+    }
+  }
+
+  dbug_tmp_restore_column_map(table->read_set, old_map);
+  DBUG_RETURN(result);
+}
+
+
 int ha_chobie::set_rank(SkipListNode *node)
 {
   int score = 0;
@@ -453,9 +481,16 @@ int ha_chobie::set_rank(SkipListNode *node)
 */
 int ha_chobie::update_row(const uchar *old_data, uchar *new_data)
 {
-
+  int score, rc, old_score;
   DBUG_ENTER("ha_chobie::update_row");
-  DBUG_RETURN(HA_ERR_WRONG_COMMAND);
+  ha_statistic_increment(&SSV::ha_update_count);
+  score = get_score();
+  old_score = get_score_from_buf(old_data);
+
+  mysql_mutex_lock(&share->mutex);
+  rc = share->data_class->update_row(old_data, old_score, new_data, score, table->s->rec_buff_length, current_position);
+  mysql_mutex_unlock(&share->mutex);
+  DBUG_RETURN(0);
 }
 
 
@@ -481,8 +516,15 @@ int ha_chobie::update_row(const uchar *old_data, uchar *new_data)
 
 int ha_chobie::delete_row(const uchar *buf)
 {
+  int score, rc;
   DBUG_ENTER("ha_chobie::delete_row");
-  DBUG_RETURN(HA_ERR_WRONG_COMMAND);
+  score = get_score();
+
+  /* TODO: delete exact row. */
+  mysql_mutex_lock(&share->mutex);
+  rc = share->data_class->delete_row(buf, score);
+  mysql_mutex_unlock(&share->mutex);
+  DBUG_RETURN(0);
 }
 
 

@@ -72,6 +72,7 @@ public:
   }
 
   int get_score();
+  int get_score_from_buf(const uchar *buf);
   int set_rank(SkipListNode *node);
 
   /** @brief
